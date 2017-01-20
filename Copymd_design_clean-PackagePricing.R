@@ -1,6 +1,6 @@
-setwd("~/Documents/Conjoint/Projects/MD_Design_Scrub")
+setwd("~/Documents/Conjoint/Qualtrics_Conjoint/q_MD_Design_Clean")
 
-design <- read.csv("design_correct.csv",header=TRUE)
+design <- read.csv("CopyOfdesign_correct.csv",header=TRUE)
 head(design)
 
 final.design <- matrix(0,nrow(design),7)
@@ -11,7 +11,7 @@ for(d in 12:48){
   
   print(d)
   
-  try(new.design <- MD_clean(use.design,1))
+  try(new.design <- MD_clean(use.design,2))
   
   for(r in 1:nrow(new.design)){
     for(c in 1:ncol(new.design)){
@@ -138,3 +138,26 @@ MD_clean(design)
 ## Run Time ##
 # user  system elapsed 
 # 0.083   0.003   0.087 
+
+
+## Once I have the splits locations for each max place, and the split location for the mins in question, is there a way to use those and reorder them 
+## until there is a combination with no mins being put into the same split twice?
+## 
+## You have to look at them all at the same time so you don't run into the scenario where the last one only has one place to go and the min is already
+## in that split.... Does this code currently take the max place awy after it is used???
+##
+
+
+# Scratch
+min1 <- c(1,4,14)
+min2 <- c(12,5,11)
+min3 <- c(3,7,13)
+
+test.insplits <- c(1,3,4,6,11,12,14)
+combn(c(min1,min2,min3),length(c(min1,min2,min3)))
+
+
+n <- 3
+l <- rep(list(1), n)
+
+expand.grid(min1,min1,min1)
