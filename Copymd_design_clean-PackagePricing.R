@@ -1,5 +1,6 @@
 setwd("~/Documents/Conjoint/Qualtrics_Conjoint/q_MD_Design_Clean")
 
+
 design <- read.csv("CopyOfdesign_correct.csv",header=TRUE)
 head(design)
 
@@ -23,10 +24,11 @@ for(d in 12:48){
   
 }
 
-write.csv(new.design,"cleaned_design.csv")
+write.csv(final.design,"cleaned_design.csv")
 
 
-MD_clean <- function(design,threshold=2){
+
+MD_clean <- function(design,threshold=1){
   
   numItems <- ncol(design) - 2
   
@@ -45,8 +47,7 @@ MD_clean <- function(design,threshold=2){
     vers.list[[q]] <- vec.test
   }
   
-  for (b in 0:(threshold - 1)){ 
-    
+  for (b in c(0,(threshold - 1),(threshold - 1),1)){ 
     occ.list <- list()
     for (j in 1:length(vers.list)){
       occurences <- c()
@@ -62,27 +63,30 @@ MD_clean <- function(design,threshold=2){
       ind.mins <- c()
       ind.maxes <- c()
       sampl.maxes <- c()
-      max.places <- c()
       maxes <- c()
-      ind.max.places <- c()
       before.sampl.places <- c()
+      final.max.places <- c()
       if (is.element(b,occ.list[[j]]) == TRUE){
         ind.mins <- which(occ.list[[j]] == b)
         ind.maxes <- which(occ.list[[j]] == max(occ.list[[j]]))
         
         cntr <- 1
-        while (length(ind.maxes) < length(ind.mins)){
-          cntr <- cntr + 1
+        while (length(ind.maxes) < (length(ind.mins))){
+          cntr <- cntr 
           ind.next.max <- c()
           add.nexts <- c()
           maxes.to.add <- c()
           ind.next.max <- which(occ.list[[j]] == max(occ.list[[j]])-cntr)
-          add.nexts <- sample(length(ind.next.max),size=(length(ind.mins)-length(ind.maxes)))
+          while (length(ind.next.max) < (length(ind.mins)-length(ind.maxes))){
+            cntr <- cntr + 1
+            ind.next.max <- which(occ.list[[j]] == max(occ.list[[j]]-cntr))
+          }
+          add.nexts <- sample(length(ind.next.max),size=((length(ind.mins))-length(ind.maxes))) ### 1
           maxes.to.add <- ind.next.max[c(add.nexts)]
           ind.maxes <- c(ind.maxes,maxes.to.add)
         }
         
-        sampl.maxes <- sample(length(ind.maxes),size=length(ind.mins))
+        sampl.maxes <- sample(length(ind.maxes),size=length(ind.mins)) ### Sample 2
         maxes <- ind.maxes[c(sampl.maxes)]
         cntr <- 1
         for (t in 1:length(maxes)){
@@ -92,22 +96,33 @@ MD_clean <- function(design,threshold=2){
             cntr <- cntr + 1
           }
         }
-        ind.max.places <- sample(x=length(before.sampl.places),size=length(ind.mins))
-        max.places <- before.sampl.places[c(ind.max.places)]
-        splits <- split(vers.list[[j]], ceiling(seq_along(vers.list[[j]])/numItems))
-        max.in.split <- ceiling(max.places/numItems)
-        for (v in 1:length(ind.mins)){
-          if (is.element(ind.mins[v],splits[max.in.split][v])==TRUE){
-            before.sampl.places <- before.sampl.places[-ind.max.places]
-            ind.max.places <- sample(x=length(before.sampl.places),size=length(ind.mins))
-            max.places <- before.sampl.places[c(ind.max.places)]
-          } else {
-            max.places <- max.places
-          }
-        }
         
+        splits <- c()
+        max.in.split <- c()
+        ind.max.places <- c()
+        
+        for (u in 1:length(ind.mins)){
+          max.places <- c()
+          ind.max.places <- sample(x=length(before.sampl.places),size=1)  ### Sample 3
+          max.places <- before.sampl.places[c(ind.max.places)]
+          splits <- split(vers.list[[j]], ceiling(seq_along(vers.list[[j]])/numItems))
+          max.in.split <- ceiling(max.places/numItems)
+          
+          temp.before.sampl.places <- c()
+          
+          while (is.element(ind.mins[u],splits[max.in.split][u])==TRUE){
+            temp.before.sampl.places <- before.sampl.places[-(ind.max.places)]
+            ind.max.places <- sample(x=length(temp.before.sampl.places),size=1) ### Sample 4
+            max.places <- temp.before.sampl.places[c(ind.max.places)]
+            max.in.split <- ceiling(max.places/numItems)
+          } 
+          
+          max.places <- max.places
+          before.sampl.places <- before.sampl.places[-c(ind.max.places)]
+          final.max.places[u] <- max.places
+        }
         for (w in 1:length(ind.mins)){
-          temp.list[[j]][max.places[w]] <- ind.mins[w]
+          temp.list[[j]][final.max.places[w]] <- ind.mins[w]
         }
         no.mins.list[[j]] <- temp.list[[j]]
       } else{
@@ -124,11 +139,13 @@ MD_clean <- function(design,threshold=2){
   tasks.df <- data.frame(matrix(undone.nomins,nrow=length(undone.nomins)/numItems,byrow=T))
   temp.df <- design
   temp.df[,c((ncol(design)-numItems + 1):ncol(design))] <- tasks.df
-  
-  return(temp.df)
+
 } 
 
-MD_clean(design)
+
+test.design <- design[design$NumberAttribute == 38,2:ncol(design)]
+MD_clean(test.design,1)
+occ.list
 
 # Threshold is automatically set to two, so you don't have to worry about it.
 # The design is the only input and this will work AS LONG AS the design is in the same format:
